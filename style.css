@@ -1,0 +1,111 @@
+body {
+    font-family: Tahoma, sans-serif;
+    margin: 20px;
+}
+
+#professionalSettings, .input-container, #scheduleContainer, #actorScheduleChart, #professionalScheduleChart, #legend {
+    margin-bottom: 30px;
+}
+
+.setting-row, .input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.setting-row label, .input-row input, .input-row button {
+    margin-right: 10px;
+}
+
+.input-row input {
+    flex: 1;
+    padding: 5px;
+}
+
+.input-row button {
+    padding: 5px 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 8px;
+    text-align: center;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+.chart-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.chart-label {
+    width: 100px;
+    text-align: right;
+    margin-right: 10px;
+}
+
+
+.conflict {
+    /* background-color: rgba(255, 0, 0, 0.5); *//* Colore di evidenziazione per i conflitti */
+    background-color: #ef476f;
+    border: 1px solid red;
+}
+
+/* Stili per i gruppi e i task */
+.trucco {
+    background-color: lightskyblue;
+}
+
+.capelli {
+    background-color: lightgreen;
+}
+
+.costumi {
+    background-color: tan;
+}
+
+.vis-label > .vis-inner {
+    color: #000; /* Scegli il colore desiderato per il testo delle etichette */
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.vis-label, .vis-group {
+    filter: brightness(1.2);
+}
+
+.vis-item.vis-range.trucco > .vis-item-overflow {
+    background-color: dodgerblue;
+}
+
+.vis-item.vis-range.capelli > .vis-item-overflow  {
+    background-color: mediumseagreen;
+    color: white;
+}
+.vis-item.vis-range.costumi > .vis-item-overflow  {
+    background-color: coral;
+    color: white;
+}
+
+.vis-selected > .vis-item-visible-frame {
+    background-color: yellow; /* or any color you prefer */
+    color: black;
+}
+
+.vis-item.vis-range > .vis-item-overflow {
+    color: white;
+    text-transform: uppercase;
+    font-size: small;
+}

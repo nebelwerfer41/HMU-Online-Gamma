@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Schedulazione Cast</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/vis-timeline/styles/vis-timeline-graph2d.min.css">
+</head>
+
+<body>
+    <h1>Gestione Schedulazione Cast</h1>
+
+    <!-- Configurazione dei Professionisti -->
+    <div id="professionalSettings">
+        <h2>Configurazione dei Professionisti</h2>
+        <div class="setting-row">
+            <label>Trucco:</label>
+            <input type="number" id="trucco-count" value="1" min="0" />
+        </div>
+        <div class="setting-row">
+            <label>Capelli:</label>
+            <input type="number" id="capelli-count" value="1" min="0" />
+        </div>
+        <div class="setting-row">
+            <label>Costumi:</label>
+            <input type="number" id="costumi-count" value="0" min="0" />
+        </div>
+        <button onclick="updateProfessionalSettings()">Aggiorna Configurazione Professionisti</button>
+    </div>
+
+    <!-- Aggiunta degli Attori -->
+    <div class="input-container">
+        <button onclick="addActorRow()">Aggiungi Attore</button>
+        <div id="actorRows">
+            <!-- Righe di input degli attori generate dinamicamente -->
+        </div>
+        <button onclick="generateSchedule()">Genera Programmazione</button>
+    </div>
+
+    <!-- Vista della programmazione -->
+    <div id="scheduleContainer">
+        <h2>Programmazione</h2>
+        <div>
+            <label>
+                <input type="checkbox" id="showStartEndCheckbox" onclick="updateAllSchedules()">
+                Mostra orario di inizio e fine
+            </label>
+            <label>
+                <input type="checkbox" id="showProfessionalCheckbox" onclick="updateAllSchedules()">
+                Mostra professionista assegnato
+            </label>
+        </div>
+        <table id="scheduleTable">
+            <thead>
+                <tr>
+                    <th>Attore</th>
+                    <th>Orario di Arrivo</th>
+                    <th>Trucco</th>
+                    <th>Capelli</th>
+                    <th>Costumi</th>
+                    <th>Orario di Pronti</th>
+                </tr>
+            </thead>
+            <tbody id="scheduleTableBody">
+                <!-- Celle della programmazione generate dinamicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="visualization" style="height: 500px;"></div>
+
+    <script src="https://unpkg.com/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"></script>
+    <script src="scheduling.js"></script>
+    <script src="script.js"></script>
+    <script src="timeline.js"></script>
+</body>
+
+</html>
