@@ -17,15 +17,19 @@
         <h2>Configurazione dei Professionisti</h2>
         <div class="setting-row">
             <label for="trucco-count">Trucco (num):</label>
-            <input type="number" id="trucco-count" value="1" min="0" />
+            <input type="number" id="trucco-count" value="2" min="0" />
             <label for="trucco-names">Nomi Trucco:</label>
-            <input type="text" id="trucco-names" placeholder="Inserisci nomi separati da virgola" />
+            <input type="text" id="trucco-names" value="Fede, Flavia, Luisa" />
         </div>
         <div class="setting-row">
             <label for="capelli-count">Capelli (num):</label>
-            <input type="number" id="capelli-count" value="1" min="0" />
+            <input type="number" id="capelli-count" value="2" min="0" />
             <label for="capelli-names">Nomi Capelli:</label>
-            <input type="text" id="capelli-names" placeholder="Inserisci nomi separati da virgola" />
+            <input type="text" id="capelli-names" value="Ciro, Lori, Meli" />
+        </div>
+        <div class="setting-row">
+            <label for="costumi-count">Costumi:</label>
+            <input type="number" id="costumi-count" value="0" min="0" />
         </div>
         <button onclick="updateProfessionalSettings()">Aggiorna Configurazione</button>
     </div>
