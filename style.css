@@ -1,19 +1,105 @@
 /* Base Styles */
 body {
     font-family: Tahoma, sans-serif;
-    margin: 20px;
+    margin: 10px;
 }
 
 button {
     cursor: pointer;
     border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    padding: 10px 15px;
+    border-radius: 3px;
+    font-size: 12px;
+    padding: 5px 10px;
 }
 
 button:hover {
     filter: brightness(0.9);
+}
+
+.input-row input[type="number"] {
+    flex: none; /* Larghezza fissa */
+    width: 80px; /* Imposta una larghezza ridotta */
+}
+
+.input-row input[type="time"] {
+    flex: none; /* Larghezza fissa */
+    width: 80px; /* Imposta una larghezza ridotta */
+}
+/* Intestazione dei campi */
+.input-row.header-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px;
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-weight: bold;
+    text-align: center;
+    font-size: 12px;
+}
+
+.input-row.header-row span {
+    flex: 1;
+    text-align: center;
+}
+
+/* Larghezze personalizzate per i campi specifici */
+.input-row.header-row span:nth-child(1),
+.input-row span:nth-child(1) {
+    flex: 2;
+}
+
+.input-row.header-row span:nth-last-child(1),
+.input-row span:nth-last-child(1) {
+    flex: none;
+    width: 60px;
+}
+
+/* Righe di input */
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.input-row input,
+.input-row select {
+    flex: 1;
+    height: 30px;
+    padding: 0 5px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-sizing: border-box;
+}
+
+.input-row input[type="text"] {
+    flex: 1.5;
+}
+
+.input-row button {
+    flex: none;
+    width: 60px;
+    background-color: #d9534f;
+    color: white;
+    height: 30px;
+    font-size: 12px;
+}
+
+.input-row button:hover {
+    background-color: #c9302c;
+}
+
+#buttonRow {
+    display: flex;
+    margin-top: 10px;
+    margin-right: 5px;
 }
 
 /* Containers */
@@ -22,70 +108,57 @@ button:hover {
 #professionalSettings {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    margin-top: 20px;
-    padding: 20px;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
-    border-radius: 5px;
+    border-radius: 3px;
 }
 
-/* Input Row */
-.input-row,
-.setting-row {
+/* Contenitore principale della sezione */
+#professionalSettings {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    gap: 10px; /* Spaziatura tra righe */
     padding: 10px;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 5px;
 }
 
-/* Inputs and Selects */
-input,
-select {
-    height: 40px;
-    padding: 0 10px;
-    font-size: 14px;
-    line-height: normal;
+/* Righe di configurazione */
+.setting-row {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Spaziatura tra i campi */
+}
+
+/* Etichette e campi di input */
+.setting-row label {
+    flex: 1; /* Etichette con larghezza proporzionale */
+    font-size: 12px; /* Font più piccolo per compattezza */
+    text-align: right; /* Allineamento a destra */
+    margin-right: 5px;
+}
+
+.setting-row input {
+    flex: 2; /* Input con larghezza maggiore rispetto alle etichette */
+    height: 30px; /* Altezza ridotta */
+    padding: 0 5px;
+    font-size: 12px;
     border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    flex: 1;
-    min-width: 0;
+    border-radius: 3px;
 }
 
-input[type="text"] {
-    flex: 2; /* Nome Attore o campi più larghi */
-}
-
-/* Buttons */
-.input-row button {
-    flex: none; /* Pulsanti di dimensione fissa */
-    background-color: #d9534f;
-    color: white;
-    height: 40px;
-}
-
-.input-row button:hover {
-    background-color: #c9302c;
-}
-
-.input-container button {
-    align-self: flex-start; /* Pulsanti allineati a sinistra */
-    background-color: #007BFF;
-    color: white;
-}
-
-.input-container button:hover {
-    background-color: #0056b3;
-}
-
+/* Pulsante di configurazione */
 #professionalSettings button {
     align-self: flex-start;
     background-color: #4CAF50;
     color: white;
+    padding: 5px 15px;
+    font-size: 12px;
+    border-radius: 3px;
 }
 
 #professionalSettings button:hover {
@@ -96,7 +169,7 @@ input[type="text"] {
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 table, th, td {
@@ -104,9 +177,9 @@ table, th, td {
 }
 
 th, td {
-    padding: 10px;
+    padding: 5px;
     text-align: center;
-    font-size: 14px;
+    font-size: 12px;
 }
 
 th {
@@ -116,7 +189,7 @@ th {
 
 /* Schedule Table */
 #scheduleTable {
-    border-radius: 5px;
+    border-radius: 3px;
     overflow: hidden;
 }
 
@@ -137,11 +210,11 @@ th {
 .vis-label > .vis-inner {
     color: #000;
     font-weight: bold;
-    font-size: 12px;
+    font-size: 10px;
 }
 
 .vis-label, .vis-group {
-    filter: brightness(1.2);
+    filter: brightness(1.1);
 }
 
 .vis-item.vis-range.trucco > .vis-item-overflow {
@@ -166,7 +239,7 @@ th {
 .vis-item.vis-range > .vis-item-overflow {
     color: white;
     text-transform: uppercase;
-    font-size: small;
+    font-size: 10px;
 }
 
 /* Highlight Conflicts */
@@ -179,11 +252,11 @@ th {
 .chart-row {
     display: flex;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 }
 
 .chart-label {
-    width: 100px;
+    width: 80px;
     text-align: right;
-    margin-right: 10px;
+    margin-right: 5px;
 }
