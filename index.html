@@ -16,18 +16,22 @@
     <div id="professionalSettings">
         <h2>Configurazione dei Professionisti</h2>
         <div class="setting-row">
-            <label>Trucco:</label>
+            <label for="trucco-count">Trucco (num):</label>
             <input type="number" id="trucco-count" value="1" min="0" />
+            <label for="trucco-names">Nomi Trucco:</label>
+            <input type="text" id="trucco-names" placeholder="Inserisci nomi separati da virgola" />
         </div>
         <div class="setting-row">
-            <label>Capelli:</label>
+            <label for="capelli-count">Capelli (num):</label>
             <input type="number" id="capelli-count" value="1" min="0" />
+            <label for="capelli-names">Nomi Capelli:</label>
+            <input type="text" id="capelli-names" placeholder="Inserisci nomi separati da virgola" />
         </div>
         <div class="setting-row">
-            <label>Costumi:</label>
+            <label for="costumi-count">Costumi:</label>
             <input type="number" id="costumi-count" value="0" min="0" />
         </div>
-        <button onclick="updateProfessionalSettings()">Aggiorna Configurazione Professionisti</button>
+        <button onclick="updateProfessionalSettings()">Aggiorna Configurazione</button>
     </div>
 
     <!-- Aggiunta degli Attori -->
@@ -41,7 +45,7 @@
 
     <!-- Vista della programmazione -->
     <div id="scheduleContainer">
-        <h2>Programmazione</h2>
+        <h2>Programmazione</h2>        
         <div>
             <label>
                 <input type="checkbox" id="showStartEndCheckbox" onclick="updateAllSchedules()">
@@ -51,8 +55,8 @@
                 <input type="checkbox" id="showProfessionalCheckbox" onclick="updateAllSchedules()">
                 Mostra professionista assegnato
             </label>
-        </div>
-        <table id="scheduleTable">
+        </div>     
+         <table id="scheduleTable">
             <thead>
                 <tr>
                     <th>Attore</th>

@@ -11,26 +11,14 @@ function initializeProfessionals() {
     });
 }
 
-// Aggiorna le impostazioni dei professionisti in base ai valori di input
-function updateProfessionalSettings() {
-    Object.keys(professionalSettings).forEach(key => {
-        const countInput = document.getElementById(`${key}-count`);
-        professionalSettings[key].count = parseInt(countInput.value);
-    });
-    initializeProfessionals();
-    alert("Configurazione dei professionisti aggiornata.");
-}
-
 // Genera la programmazione degli attori
 function generateSchedule() {
+    console.log("Inizio generazione della programmazione...");
     const scheduleTableBody = document.getElementById("scheduleTableBody");
-    scheduleTableBody.innerHTML = "";
-
-    //document.getElementById("actorChartContainer").innerHTML = "";
-    //document.getElementById("professionalChartContainer").innerHTML = "";
+    scheduleTableBody.innerHTML = ""; // Pulisce la tabella di schedulazione
 
     const rows = document.querySelectorAll("#actorRows .input-row");
-    actors.length = 0;
+    actors.length = 0; // Resetta gli attori
 
     rows.forEach(row => {
         const inputs = row.querySelectorAll("input");
@@ -40,9 +28,17 @@ function generateSchedule() {
             tasks: [],
             schedule: [],
             scheduleInfo: {},
-            arrivalTime: ''
+            arrivalTime: '',
+            // Converte i selettori in numeri interi (o null se non selezionato)
+            makeupProfessional: row.querySelector('.makeup-artist-select').value
+                ? parseInt(row.querySelector('.makeup-artist-select').value)
+                : null,
+            hairProfessional: row.querySelector('.hairdresser-select').value
+                ? parseInt(row.querySelector('.hairdresser-select').value)
+                : null,
         };
 
+        // Durate dei task (trucco, capelli, costumi)
         const makeupDuration = parseInt(inputs[2].value);
         const hairDuration = parseInt(inputs[3].value);
         const costumeDuration = parseInt(inputs[4].value);
@@ -57,16 +53,19 @@ function generateSchedule() {
             actor.tasks.push({ type: 'costumi', duration: costumeDuration, actorName: actor.name });
         }
 
+        console.log(`Attore aggiunto: ${actor.name}`, actor.tasks);
         actors.push(actor);
     });
 
+    // Ordina gli attori in base all'orario di pronti
     actors.sort((a, b) => a.readyTime.localeCompare(b.readyTime));
-    initializeProfessionals();
+    initializeProfessionals(); // Inizializza i professionisti per reparto
 
+    // Procedura di schedulazione
     for (const actor of actors) {
         let scheduled = false;
         let attempt = 0;
-        const maxAttempts = 12;
+        const maxAttempts = 48;
 
         while (!scheduled && attempt <= maxAttempts) {
             const totalTaskDuration = actor.tasks.reduce((sum, task) => sum + task.duration, 0);
@@ -76,22 +75,24 @@ function generateSchedule() {
             scheduled = trySchedulingActor(actor);
 
             if (!scheduled) {
+                console.log(`Tentativo fallito per ${actor.name} al tentativo ${attempt}.`);
                 attempt++;
             }
         }
 
         if (!scheduled) {
-            alert(`Impossibile programmare ${actor.name} con i professionisti disponibili.`);
+            console.error(`Impossibile programmare ${actor.name} entro l'orario di pronti.`);
             continue;
         }
 
+        console.log(`Attore schedulato: ${actor.name}`, actor.schedule);
         addActorToScheduleTable(actor);
     }
 
-    //generateActorCharts();
-    //generateProfessionalCharts();
     updateTimeline();
 }
+
+
 
 // Funzione per tentare di schedulare un attore
 function trySchedulingActor(actor) {
@@ -103,36 +104,65 @@ function trySchedulingActor(actor) {
         actor.schedule = [];
         actor.scheduleInfo = {};
 
+        // Tentativo di schedulare i task dell'attore con l'ordine corrente
         const success = scheduleActorTasks(actor, taskOrder, tempProfessionals);
 
         if (success) {
             professionals = tempProfessionals;
-            return true;
+            return true; // Schedulazione riuscita
+        } else {
+            // Se fallisce, prova a modificare l'arrivo per anticipare
+            console.log(`Schedulazione fallita per ordine:`, taskOrder);
         }
     }
-    return false;
+
+    return false; // Nessuna schedulazione possibile con l'arrivo corrente
 }
 
-// Funzione per schedulare i task di un attore con un dato ordine
 
+// Funzione per schedulare i task di un attore con un dato ordine
 function scheduleActorTasks(actor, taskOrder, tempProfessionals) {
     let currentTime = actor.arrivalTime;
 
     for (const task of taskOrder) {
         const taskDuration = task.duration;
-        const earliestStartTime = findEarliestStartTimeForTask(task, currentTime, actor.readyTime, tempProfessionals);
 
-        if (!earliestStartTime) {
-            return false;
+        // Recupera il professionista preferito (se presente)
+        const preferredProfessional = task.type === 'trucco'
+            ? actor.makeupProfessional
+            : task.type === 'capelli'
+            ? actor.hairProfessional
+            : null;
+
+        let earliestStartTime = findEarliestStartTimeForTask(task, currentTime, actor.readyTime, tempProfessionals, preferredProfessional);
+
+        // Se il professionista preferito non è disponibile, anticipa
+        while (!earliestStartTime && isTimeBeforeOrEqual(currentTime, actor.readyTime)) {
+            currentTime = subtractMinutes(currentTime, 5); // Anticipa di 5 minuti
+            earliestStartTime = findEarliestStartTimeForTask(task, currentTime, actor.readyTime, tempProfessionals, preferredProfessional);
         }
 
-        const taskEndTime = addMinutes(earliestStartTime, task.duration);
+        if (!earliestStartTime) {
+            return false; // Task non schedulabile con l'arrivo corrente
+        }
+
+        const taskEndTime = addMinutes(earliestStartTime, taskDuration);
+
+        // Verifica che il task non si sovrapponga con altri task dell'attore
+        const hasOverlap = actor.schedule.some(existingTask => {
+            return !(isTimeBeforeOrEqual(existingTask.endTime, earliestStartTime) || isTimeBeforeOrEqual(taskEndTime, existingTask.startTime));
+        });
+
+        if (hasOverlap) {
+            console.warn(`Sovrapposizione trovata per ${actor.name} - Task: ${task.type}`);
+            return false; // Task non schedulabile a causa della sovrapposizione
+        }
+
         currentTime = taskEndTime;
 
         if (professionalSettings[task.type].count > 0) {
-            // Assegna il task al professionista specifico e ottieni l'indice
-            const assignedProfessionalIndex = assignTaskToProfessional(task, earliestStartTime, taskEndTime, tempProfessionals);
-            task.professionalIndex = assignedProfessionalIndex; // Assegna l'indice al task
+            const assignedProfessionalIndex = assignTaskToProfessional(task, earliestStartTime, taskEndTime, tempProfessionals, preferredProfessional);
+            task.professionalIndex = assignedProfessionalIndex; // Assegna il professionista
         }
 
         actor.schedule.push({
@@ -140,15 +170,18 @@ function scheduleActorTasks(actor, taskOrder, tempProfessionals) {
             endTime: taskEndTime,
             type: task.type,
             actorName: actor.name,
-            professionalIndex: task.professionalIndex // Assegna anche qui per chiarezza
+            professionalIndex: task.professionalIndex
         });
         actor.scheduleInfo[task.type] = earliestStartTime;
     }
 
-    return true;
+    return true; // Schedulazione completata
 }
 
-function findEarliestStartTimeForTask(task, startTime, readyTime, tempProfessionals) {
+
+
+
+function findEarliestStartTimeForTask(task, startTime, readyTime, tempProfessionals, preferredProfessional = null) {
     let earliestStartTime = startTime;
 
     while (isTimeBeforeOrEqual(earliestStartTime, readyTime)) {
@@ -156,22 +189,20 @@ function findEarliestStartTimeForTask(task, startTime, readyTime, tempProfession
 
         if (isTimeBeforeOrEqual(taskEndTime, readyTime)) {
             if (professionalSettings[task.type].count > 0) {
-                const isAvailable = isProfessionalAvailable(task, earliestStartTime, taskEndTime, tempProfessionals);
+                const isAvailable = isProfessionalAvailable(task, earliestStartTime, taskEndTime, tempProfessionals, preferredProfessional);
                 if (isAvailable) {
                     return earliestStartTime;
-                } else {
-                    earliestStartTime = findNextAvailableTimeForProfessional(task, earliestStartTime, readyTime, tempProfessionals);
-                    if (!earliestStartTime) return null;
                 }
             } else {
-                return earliestStartTime;
+                return earliestStartTime; // Task senza professionisti specifici
             }
-        } else {
-            return null;
         }
+        earliestStartTime = subtractMinutes(earliestStartTime, 5); // Anticipa di 5 minuti
     }
-    return null;
+
+    return null; // Nessun orario disponibile
 }
+
 
 function findNextAvailableTimeForProfessional(task, currentStartTime, readyTime, tempProfessionals) {
     const professionalsOfType = tempProfessionals[task.type];
@@ -196,13 +227,30 @@ function findNextAvailableTimeForProfessional(task, currentStartTime, readyTime,
     return nextAvailableTime;
 }
 
-function isProfessionalAvailable(task, startTime, endTime, tempProfessionals) {
+function isProfessionalAvailable(task, startTime, endTime, tempProfessionals, preferredProfessional = null) {
     const professionalsOfType = tempProfessionals[task.type];
+
+    if (preferredProfessional !== null) {
+        // Controlla solo il professionista preferito
+        const professionalSchedule = professionalsOfType[preferredProfessional];
+        const isAvailable = professionalSchedule.every(slot => {
+            return isTimeBeforeOrEqual(slot.endTime, startTime) || isTimeBeforeOrEqual(endTime, slot.startTime);
+        });
+
+        if (isAvailable) {
+            task.professionalIndex = preferredProfessional;
+            return true;
+        }
+        return false;
+    }
+
+    // Controlla tutti i professionisti disponibili
     for (let i = 0; i < professionalsOfType.length; i++) {
         const professionalSchedule = professionalsOfType[i];
         const isAvailable = professionalSchedule.every(slot => {
             return isTimeBeforeOrEqual(slot.endTime, startTime) || isTimeBeforeOrEqual(endTime, slot.startTime);
         });
+
         if (isAvailable) {
             task.professionalIndex = i;
             return true;
@@ -211,22 +259,48 @@ function isProfessionalAvailable(task, startTime, endTime, tempProfessionals) {
     return false;
 }
 
-function assignTaskToProfessional(task, startTime, endTime, tempProfessionals) {
+
+function assignTaskToProfessional(task, startTime, endTime, tempProfessionals, preferredProfessional = null) {
     const professionalsOfType = tempProfessionals[task.type];
+
+    // Se c'è un professionista preferito
+    if (preferredProfessional !== null && professionalsOfType[preferredProfessional]) {
+        const professionalSchedule = professionalsOfType[preferredProfessional];
+        const isAvailable = professionalSchedule.every(slot => {
+            return isTimeBeforeOrEqual(slot.endTime, startTime) || isTimeBeforeOrEqual(endTime, slot.startTime);
+        });
+
+        if (isAvailable) {
+            professionalSchedule.push({ startTime, endTime, actorName: task.actorName });
+            professionalSchedule.sort((a, b) => a.startTime.localeCompare(b.startTime));
+            console.log(`Task assegnato al professionista preferito (${preferredProfessional}):`, task);
+            return preferredProfessional;
+        } else {
+            console.warn(`Professionista preferito (${preferredProfessional}) non disponibile per il task:`, task);
+            return null;
+        }
+    }
+
+    // Se nessun professionista è preferito, assegna al primo disponibile
     for (let i = 0; i < professionalsOfType.length; i++) {
         const professionalSchedule = professionalsOfType[i];
         const isAvailable = professionalSchedule.every(slot => {
             return isTimeBeforeOrEqual(slot.endTime, startTime) || isTimeBeforeOrEqual(endTime, slot.startTime);
         });
+
         if (isAvailable) {
-            // Aggiungi il task al professionista specifico e ordina il programma
             professionalSchedule.push({ startTime, endTime, actorName: task.actorName });
             professionalSchedule.sort((a, b) => a.startTime.localeCompare(b.startTime));
-            return i; // Restituisci l'indice del professionista assegnato
+            console.log(`Task assegnato al professionista ${i}:`, task);
+            return i;
         }
     }
+
+    console.warn(`Nessun professionista disponibile per il task:`, task);
     return null;
 }
+
+
 
 function generateTaskPermutations(tasks) {
     if (tasks.length <= 1) return [tasks];

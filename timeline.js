@@ -7,27 +7,32 @@ var timeline;
 
 // Funzione per aggiornare la timeline con i dati attuali dei professionisti e degli attori
 function updateTimeline() {
+    console.log("Aggiornamento timeline...");
+
     // Svuota i dataset esistenti
     groups.clear();
     items.clear();
 
     let groupValue = 1;
 
-    // Creazione dei gruppi per ogni professionista specifico con colori di sfondo
+    // Creazione dei gruppi per trucco
     if (professionalSettings.trucco.count > 0) {
-        for (let i = 0; i < professionalSettings.trucco.count; i++) {
-            const groupId = `truccatore${i + 1}`;
-            groups.add({ id: groupId, content: `Truccatore ${i + 1}`, className: 'trucco', value: groupValue });
+        professionalNames.trucco.forEach((name, index) => {
+            const groupId = `truccatore${index + 1}`;
+            groups.add({ id: groupId, content: `${name}`, className: 'trucco', value: groupValue });
             groupValue++;
-        }
+            console.log(`Gruppo aggiunto per Trucco: ${name}`);
+        });
     }
 
+    // Creazione dei gruppi per capelli
     if (professionalSettings.capelli.count > 0) {
-        for (let i = 0; i < professionalSettings.capelli.count; i++) {
-            const groupId = `parrucchiere${i + 1}`;
-            groups.add({ id: groupId, content: `Parrucchiere ${i + 1}`, className: 'capelli', value: groupValue });
+        professionalNames.capelli.forEach((name, index) => {
+            const groupId = `parrucchiere${index + 1}`;
+            groups.add({ id: groupId, content: `${name}`, className: 'capelli', value: groupValue });
             groupValue++;
-        }
+            console.log(`Gruppo aggiunto per Capelli: ${name}`);
+        });
     }
 
     // Gruppo per i costumi, che non ha sottogruppi
@@ -67,29 +72,49 @@ function updateTimeline() {
     const { startDate, endDate } = calculateTimelineRange();
 
     function onMove(item, callback) {
-        console.log(`Moved item: ${item.content}, New Start: ${item.start}, New End: ${item.end}`);
-
-        const actor = actors.find(a => a.name === item.content.split(' - ')[0]);
-        const task = actor.schedule.find(t => t.type === item.content.split(' - ')[1].toLowerCase());
-
+        console.log(`Moved item: ${item.content}, New Start: ${item.start}, New End: ${item.end}, Group: ${item.group}`);
+    
+        const actorName = item.content.split(' - ')[0];
+        const taskType = item.content.split(' - ')[1].toLowerCase();
+        const actor = actors.find(a => a.name === actorName);
+        const task = actor.schedule.find(t => t.type === taskType);
+    
         // Converti gli orari nel fuso orario locale
         const localStart = new Date(item.start.getTime() - item.start.getTimezoneOffset() * 60000);
         const localEnd = new Date(item.end.getTime() - item.end.getTimezoneOffset() * 60000);
-
+    
         task.startTime = localStart.toISOString().substr(11, 5);
         task.endTime = localEnd.toISOString().substr(11, 5);
-
+    
+        // Aggiorna il gruppo (professionista) in base al nuovo gruppo del task
+        const groupId = item.group;
+        if (groupId.startsWith('truccatore')) {
+            task.professionalIndex = parseInt(groupId.replace('truccatore', '')) - 1;
+        } else if (groupId.startsWith('parrucchiere')) {
+            task.professionalIndex = parseInt(groupId.replace('parrucchiere', '')) - 1;
+        } else {
+            task.professionalIndex = null; // Per i costumi o task generici
+        }
+    
+        // Calcola il nome del professionista (se applicabile)
+        const professionalName = task.professionalIndex != null
+            ? (task.type === 'trucco' ? professionalNames.trucco[task.professionalIndex] : professionalNames.capelli[task.professionalIndex])
+            : 'Qualsiasi';
+    
+        console.log(`Task aggiornato: ${taskType}, Professionista: ${professionalName}`);
+    
         // Calcola e aggiorna l'orario di arrivo se necessario
         const newArrivalTime = calculateNewArrivalTime(actor);
         if (newArrivalTime !== actor.arrivalTime) {
             console.log(`Updating arrival time for ${actor.name} from ${actor.arrivalTime} to ${newArrivalTime}`);
             actor.arrivalTime = newArrivalTime;
         }
-
+    
         // Aggiorna sempre la tabella degli orari
         updateActorSchedule(actor);
         callback(item);
     }
+    
 
     function onUpdate(item, callback) {
         console.log(`Updated item: ${item.content}, New Start: ${item.start}, New End: ${item.end}`);
@@ -126,6 +151,13 @@ function updateTimeline() {
         editable: {
             updateTime: true,
             updateGroup: true
+        },
+        margin: {
+            item: 0,
+            axis: 0,
+            item : {
+              horizontal : -25
+            }
         },
         start: startDate,
         end: endDate,
@@ -251,12 +283,10 @@ updateTimeline();
 // Aggiunge minuti a un orario e arrotonda ai 5 minuti più vicini
 function addMinutes(time, minutes) {
     const [hours, mins] = time.split(':').map(Number);
-    let totalMins = hours * 60 + mins + minutes;
-    totalMins = Math.round(totalMins / 5) * 5; // Arrotonda ai 5 minuti più vicini
-    totalMins = totalMins % (24 * 60); // Gestisce l'overflow
-    const newHours = Math.floor(totalMins / 60);
-    const newMins = totalMins % 60;
-    return `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}`;
+    const totalMinutes = hours * 60 + mins + minutes;
+    const newHours = Math.floor(totalMinutes / 60) % 24;
+    const newMinutes = totalMinutes % 60;
+    return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
 }
 
 // Sottrae minuti da un orario e arrotonda ai 5 minuti più vicini
@@ -292,10 +322,12 @@ function isTimeBefore(time1, time2) {
     return timeToMinutes(time1) < timeToMinutes(time2);
 }
 
-// Confronta se time1 è prima o uguale a time2
 function isTimeBeforeOrEqual(time1, time2) {
-    return timeToMinutes(time1) <= timeToMinutes(time2);
+    const [hours1, mins1] = time1.split(':').map(Number);
+    const [hours2, mins2] = time2.split(':').map(Number);
+    return hours1 < hours2 || (hours1 === hours2 && mins1 <= mins2);
 }
+
 
 // Calcola la differenza in minuti tra due orari
 function timeDifferenceInMinutes(time1, time2) {

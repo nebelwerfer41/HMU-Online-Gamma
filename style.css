@@ -1,34 +1,102 @@
+/* Base Styles */
 body {
     font-family: Tahoma, sans-serif;
     margin: 20px;
 }
 
-#professionalSettings, .input-container, #scheduleContainer, #actorScheduleChart, #professionalScheduleChart, #legend {
-    margin-bottom: 30px;
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    padding: 10px 15px;
 }
 
-.setting-row, .input-row {
+button:hover {
+    filter: brightness(0.9);
+}
+
+/* Containers */
+#actorRows,
+.input-container,
+#professionalSettings {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Input Row */
+.input-row,
+.setting-row {
     display: flex;
     align-items: center;
-    margin-bottom: 10px;
+    gap: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
 }
 
-.setting-row label, .input-row input, .input-row button {
-    margin-right: 10px;
-}
-
-.input-row input {
+/* Inputs and Selects */
+input,
+select {
+    height: 40px;
+    padding: 0 10px;
+    font-size: 14px;
+    line-height: normal;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
     flex: 1;
-    padding: 5px;
+    min-width: 0;
 }
 
+input[type="text"] {
+    flex: 2; /* Nome Attore o campi più larghi */
+}
+
+/* Buttons */
 .input-row button {
-    padding: 5px 10px;
+    flex: none; /* Pulsanti di dimensione fissa */
+    background-color: #d9534f;
+    color: white;
+    height: 40px;
 }
 
+.input-row button:hover {
+    background-color: #c9302c;
+}
+
+.input-container button {
+    align-self: flex-start; /* Pulsanti allineati a sinistra */
+    background-color: #007BFF;
+    color: white;
+}
+
+.input-container button:hover {
+    background-color: #0056b3;
+}
+
+#professionalSettings button {
+    align-self: flex-start;
+    background-color: #4CAF50;
+    color: white;
+}
+
+#professionalSettings button:hover {
+    background-color: #45a049;
+}
+
+/* Table Styles */
 table {
     width: 100%;
     border-collapse: collapse;
+    margin-top: 20px;
 }
 
 table, th, td {
@@ -36,34 +104,23 @@ table, th, td {
 }
 
 th, td {
-    padding: 8px;
+    padding: 10px;
     text-align: center;
+    font-size: 14px;
 }
 
 th {
-    background-color: #f2f2f2;
+    background-color: #f4f4f4;
+    font-weight: bold;
 }
 
-.chart-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
+/* Schedule Table */
+#scheduleTable {
+    border-radius: 5px;
+    overflow: hidden;
 }
 
-.chart-label {
-    width: 100px;
-    text-align: right;
-    margin-right: 10px;
-}
-
-
-.conflict {
-    /* background-color: rgba(255, 0, 0, 0.5); *//* Colore di evidenziazione per i conflitti */
-    background-color: #ef476f;
-    border: 1px solid red;
-}
-
-/* Stili per i gruppi e i task */
+/* Task Visualization */
 .trucco {
     background-color: lightskyblue;
 }
@@ -76,8 +133,9 @@ th {
     background-color: tan;
 }
 
+/* VIS Timeline Styles */
 .vis-label > .vis-inner {
-    color: #000; /* Scegli il colore desiderato per il testo delle etichette */
+    color: #000;
     font-weight: bold;
     font-size: 12px;
 }
@@ -90,17 +148,18 @@ th {
     background-color: dodgerblue;
 }
 
-.vis-item.vis-range.capelli > .vis-item-overflow  {
+.vis-item.vis-range.capelli > .vis-item-overflow {
     background-color: mediumseagreen;
     color: white;
 }
-.vis-item.vis-range.costumi > .vis-item-overflow  {
+
+.vis-item.vis-range.costumi > .vis-item-overflow {
     background-color: coral;
     color: white;
 }
 
 .vis-selected > .vis-item-visible-frame {
-    background-color: yellow; /* or any color you prefer */
+    background-color: yellow;
     color: black;
 }
 
@@ -108,4 +167,23 @@ th {
     color: white;
     text-transform: uppercase;
     font-size: small;
+}
+
+/* Highlight Conflicts */
+.conflict {
+    background-color: #ef476f;
+    border: 1px solid red;
+}
+
+/* Chart Labels */
+.chart-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.chart-label {
+    width: 100px;
+    text-align: right;
+    margin-right: 10px;
 }
