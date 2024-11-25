@@ -27,10 +27,6 @@
             <label for="capelli-names">Nomi Capelli:</label>
             <input type="text" id="capelli-names" placeholder="Inserisci nomi separati da virgola" />
         </div>
-        <div class="setting-row">
-            <label for="costumi-count">Costumi:</label>
-            <input type="number" id="costumi-count" value="0" min="0" />
-        </div>
         <button onclick="updateProfessionalSettings()">Aggiorna Configurazione</button>
     </div>
 
@@ -73,7 +69,7 @@
         </table>
     </div>
 
-    <div id="visualization" style="height: 500px;"></div>
+    <div id="visualization" style="height: 500px; margin-top: 30px;"></div>
 
     <script src="https://unpkg.com/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"></script>
     <script src="scheduling.js"></script>

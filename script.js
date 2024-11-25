@@ -47,6 +47,8 @@ function updateProfessionalSettings() {
     alert("Configurazione aggiornata!");
 }
 
+updateProfessionalSettings()
+
 // Popola opzioni dei selettori
 function populateProfessionalOptions(selectElement, department) {
     console.log(`Popolamento selettore per ${department}...`);
@@ -96,16 +98,17 @@ function addActorRow(data = {}) {
         <input type="text" placeholder="Nome Attore" value="${data.name || ''}" />
         <input type="time" placeholder="Orario di Pronti" value="${data.readyTime || ''}" />
         <input type="number" placeholder="Durata Trucco (min)" value="${data.makeupDuration || ''}" min="0" />
-        <input type="number" placeholder="Durata Capelli (min)" value="${data.hairDuration || ''}" min="0" />
-        <input type="number" placeholder="Durata Costumi (min)" value="${data.costumeDuration || ''}" min="0" />
         <select class="makeup-artist-select">
             <option value="">Qualsiasi</option>
             ${professionalNames.trucco.map((name, index) => `<option value="${index}">${name}</option>`).join('')}
         </select>
+        <input type="number" placeholder="Durata Capelli (min)" value="${data.hairDuration || ''}" min="0" />
         <select class="hairdresser-select">
             <option value="">Qualsiasi</option>
             ${professionalNames.capelli.map((name, index) => `<option value="${index}">${name}</option>`).join('')}
         </select>
+        <input type="number" placeholder="Durata Costumi (min)" value="${data.costumeDuration || ''}" min="0" />
+
         <button onclick="removeActorRow(this)">Rimuovi</button>
     `;
 
@@ -176,11 +179,11 @@ function updateActorSchedule(actor) {
             // Costruisce il contenuto in base ai checkbox
             row.querySelector('td:nth-child(3)').textContent = makeupTask
                 ? (showStartEnd ? `${makeupTask.startTime} - ${makeupTask.endTime}` : `${makeupTask.startTime}`) +
-                  (showProfessional ? ` (${makeupProfessionalName})` : '')
+                (showProfessional ? ` (${makeupProfessionalName})` : '')
                 : '-';
             row.querySelector('td:nth-child(4)').textContent = hairTask
                 ? (showStartEnd ? `${hairTask.startTime} - ${hairTask.endTime}` : `${hairTask.startTime}`) +
-                  (showProfessional ? ` (${hairProfessionalName})` : '')
+                (showProfessional ? ` (${hairProfessionalName})` : '')
                 : '-';
             row.querySelector('td:nth-child(5)').textContent = costumeTask
                 ? (showStartEnd ? `${costumeTask.startTime} - ${costumeTask.endTime}` : `${costumeTask.startTime}`)
