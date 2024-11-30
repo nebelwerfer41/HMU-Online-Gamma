@@ -242,12 +242,6 @@ th {
     font-size: 10px;
 }
 
-/* Highlight Conflicts */
-.conflict {
-    background-color: #ef476f;
-    border: 1px solid red;
-}
-
 /* Chart Labels */
 .chart-row {
     display: flex;
@@ -259,4 +253,16 @@ th {
     width: 80px;
     text-align: right;
     margin-right: 5px;
+}
+
+/* Evidenziazione task */
+.highlight > .vis-item-overflow {
+    background-color: yellow !important;
+    color: black !important;
+}
+
+/* Evidenziazione conflitti */
+.conflict > .vis-item-overflow {
+    background-color: red !important;
+    color: white !important;
 }

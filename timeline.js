@@ -1,46 +1,48 @@
 // timelineVis.js
 
-// Inizializzazione dei dataset per i gruppi e gli elementi
+// Initialization of datasets for groups and items
 var groups = new vis.DataSet();
 var items = new vis.DataSet();
 var timeline;
 
-// Funzione per aggiornare la timeline con i dati attuali dei professionisti e degli attori
-function updateTimeline() {
-    console.log("Aggiornamento timeline...");
+let activeConflicts = {}; // Each actor will have a list of conflicting tasks
 
-    // Svuota i dataset esistenti
+// Function to update the timeline with the current data of professionals and actors
+function updateTimeline() {
+    console.log("Updating timeline...");
+
+    // Clear existing datasets
     groups.clear();
     items.clear();
 
     let groupValue = 1;
 
-    // Creazione dei gruppi per trucco
+    // Create groups for makeup artists
     if (professionalSettings.trucco.count > 0) {
         professionalNames.trucco.forEach((name, index) => {
             const groupId = `truccatore${index + 1}`;
             groups.add({ id: groupId, content: `${name}`, className: 'trucco', value: groupValue });
             groupValue++;
-            console.log(`Gruppo aggiunto per Trucco: ${name}`);
+            console.log(`Group added for Makeup: ${name}`);
         });
     }
 
-    // Creazione dei gruppi per capelli
+    // Create groups for hairdressers
     if (professionalSettings.capelli.count > 0) {
         professionalNames.capelli.forEach((name, index) => {
             const groupId = `parrucchiere${index + 1}`;
             groups.add({ id: groupId, content: `${name}`, className: 'capelli', value: groupValue });
             groupValue++;
-            console.log(`Gruppo aggiunto per Capelli: ${name}`);
+            console.log(`Group added for Hair: ${name}`);
         });
     }
 
-    // Gruppo per i costumi, che non ha sottogruppi
-    groups.add({ id: 'COSTUMI', content: 'Costumi', className: 'costumi', value: groupValue });
+    // Group for costumes, which doesn't have subgroups
+    groups.add({ id: 'COSTUMI', content: 'Costumes', className: 'costumi', value: groupValue });
 
-    console.log("Gruppi aggiornati:", groups.get()); // Log per verificare i gruppi aggiornati
+    console.log("Updated groups:", groups.get()); // Log to verify updated groups
 
-    // Aggiungi gli elementi (task) per ogni attore con classi di colore
+    // Add items (tasks) for each actor with color classes
     actors.forEach(actor => {
         actor.schedule.forEach(task => {
             let groupId;
@@ -73,76 +75,167 @@ function updateTimeline() {
 
     function onMove(item, callback) {
         console.log(`Moved item: ${item.content}, New Start: ${item.start}, New End: ${item.end}, Group: ${item.group}`);
-    
+
         const actorName = item.content.split(' - ')[0];
         const taskType = item.content.split(' - ')[1].toLowerCase();
         const actor = actors.find(a => a.name === actorName);
         const task = actor.schedule.find(t => t.type === taskType);
-    
-        // Converti gli orari nel fuso orario locale
-        const localStart = new Date(item.start.getTime() - item.start.getTimezoneOffset() * 60000);
-        const localEnd = new Date(item.end.getTime() - item.end.getTimezoneOffset() * 60000);
-    
-        task.startTime = localStart.toISOString().substr(11, 5);
-        task.endTime = localEnd.toISOString().substr(11, 5);
-    
-        // Aggiorna il gruppo (professionista) in base al nuovo gruppo del task
+
+        // Format time correctly
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
+        task.startTime = formatTime(item.start);
+        task.endTime = formatTime(item.end);
+
+        // Update the group (professional) based on the new task group
         const groupId = item.group;
         if (groupId.startsWith('truccatore')) {
             task.professionalIndex = parseInt(groupId.replace('truccatore', '')) - 1;
         } else if (groupId.startsWith('parrucchiere')) {
             task.professionalIndex = parseInt(groupId.replace('parrucchiere', '')) - 1;
         } else {
-            task.professionalIndex = null; // Per i costumi o task generici
+            task.professionalIndex = null; // For costumes or generic tasks
         }
-    
-        // Calcola il nome del professionista (se applicabile)
+
+        // Calculate the professional's name (if applicable)
         const professionalName = task.professionalIndex != null
             ? (task.type === 'trucco' ? professionalNames.trucco[task.professionalIndex] : professionalNames.capelli[task.professionalIndex])
-            : 'Qualsiasi';
-    
-        console.log(`Task aggiornato: ${taskType}, Professionista: ${professionalName}`);
-    
-        // Calcola e aggiorna l'orario di arrivo se necessario
+            : 'Any';
+
+        console.log(`Updated task: ${taskType}, Professional: ${professionalName}`);
+
+        // Calculate and update the arrival time if necessary
         const newArrivalTime = calculateNewArrivalTime(actor);
         if (newArrivalTime !== actor.arrivalTime) {
             console.log(`Updating arrival time for ${actor.name} from ${actor.arrivalTime} to ${newArrivalTime}`);
             actor.arrivalTime = newArrivalTime;
         }
-    
-        // Aggiorna sempre la tabella degli orari
+
+        // Update the items dataset with the new item before conflict checking
+        items.update(item);
+
+        // Check for conflicts
+        checkConflicts(item);
+
+        // **Update the item with the new className from the dataset**
+        const updatedItem = items.get(item.id);
+        item.className = updatedItem.className;
+
+        // Always update the schedule table
         updateActorSchedule(actor);
+
+        // Call the callback with the updated item
         callback(item);
     }
-    
+
 
     function onUpdate(item, callback) {
         console.log(`Updated item: ${item.content}, New Start: ${item.start}, New End: ${item.end}`);
-
-        const actor = actors.find(a => a.name === item.content.split(' - ')[0]);
-        const task = actor.schedule.find(t => t.type === item.content.split(' - ')[1].toLowerCase());
-
-        // Converti gli orari nel fuso orario locale
-        const localStart = new Date(item.start.getTime() - item.start.getTimezoneOffset() * 60000);
-        const localEnd = new Date(item.end.getTime() - item.end.getTimezoneOffset() * 60000);
-
-        task.startTime = localStart.toISOString().substr(11, 5);
-        task.endTime = localEnd.toISOString().substr(11, 5);
-
-        // Calcola e aggiorna l'orario di arrivo se necessario
+    
+        const actorName = item.content.split(' - ')[0];
+        const taskType = item.content.split(' - ')[1].toLowerCase();
+        const actor = actors.find(a => a.name === actorName);
+        const task = actor.schedule.find(t => t.type === taskType);
+    
+        // Format time correctly
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+    
+        task.startTime = formatTime(item.start);
+        task.endTime = formatTime(item.end);
+    
+        // Calculate and update the arrival time if necessary
         const newArrivalTime = calculateNewArrivalTime(actor);
-        if (newArrivalTime !== actor.arrivalTime) {
+        if (newArrivalTime <= actor.arrivalTime) {
             console.log(`Updating arrival time for ${actor.name} from ${actor.arrivalTime} to ${newArrivalTime}`);
             actor.arrivalTime = newArrivalTime;
         }
-
-        // Aggiorna sempre la tabella degli orari
+    
+        // Update the items dataset with the new item before conflict checking
+        items.update(item);
+    
+        // Check for conflicts
+        checkConflicts(item);
+    
+        // **Update the item with the new className from the dataset**
+        const updatedItem = items.get(item.id);
+        item.className = updatedItem.className;
+    
+        // Always update the schedule table
         updateActorSchedule(actor);
+    
+        // Call the callback with the updated item
         callback(item);
     }
+    
 
+    function checkConflicts(item) {
+        // Restore colors of resolved conflicting tasks
+        Object.keys(activeConflicts).forEach(itemId => {
+            const conflictItem = items.get(itemId);
+            if (conflictItem) {
+                const originalClass = conflictItem.className.replace(' conflict', '');
+                items.update({ id: itemId, className: originalClass });
+            }
+        });
 
+        // Clear activeConflicts
+        activeConflicts = {};
 
+        // Get all tasks
+        const allItems = items.get();
+
+        // For each task, check for conflicts
+        allItems.forEach(item => {
+            const overlappingItems = allItems.filter(other =>
+                item.id !== other.id &&
+                item.start < other.end &&
+                item.end > other.start &&
+                item.content.split(' - ')[0] === other.content.split(' - ')[0] // Same actor
+            );
+
+            if (overlappingItems.length > 0) {
+                // Mark the current item as conflicting
+                const newClassName = item.className.includes(' conflict') ? item.className : `${item.className} conflict`;
+                items.update({ id: item.id, className: newClassName });
+
+                // Add to activeConflicts
+                if (!activeConflicts[item.id]) {
+                    activeConflicts[item.id] = [];
+                }
+                activeConflicts[item.id].push(...overlappingItems.map(oi => oi.id));
+
+                // Mark overlapping items as conflicting
+                overlappingItems.forEach(overlapItem => {
+                    const overlapClassName = overlapItem.className.includes(' conflict') ? overlapItem.className : `${overlapItem.className} conflict`;
+                    items.update({ id: overlapItem.id, className: overlapClassName });
+
+                    // Add to activeConflicts
+                    if (!activeConflicts[overlapItem.id]) {
+                        activeConflicts[overlapItem.id] = [];
+                    }
+                    activeConflicts[overlapItem.id].push(item.id);
+                });
+            }
+        });
+
+        // Log conflicts
+        if (Object.keys(activeConflicts).length > 0) {
+            logConflict(`Conflicts detected`, activeConflicts);
+        } else {
+            logConflict(`No conflicts detected`);
+        }
+    }
+
+    function logConflict(message, details = null) {
+        console.log(`[CONFLICT LOG] ${message}`);
+        if (details) {
+            console.log(details);
+        }
+    }
 
     var options = {
         groupOrder: function (a, b) {
@@ -155,8 +248,8 @@ function updateTimeline() {
         margin: {
             item: 0,
             axis: 0,
-            item : {
-              horizontal : -25
+            item: {
+                horizontal: -25
             }
         },
         start: startDate,
@@ -167,10 +260,9 @@ function updateTimeline() {
         },
         onMove: onMove,
         onUpdate: onUpdate,
-        zoomMin: 1000 * 60 * 60,             // one hour in milliseconds
+        zoomMin: 1000 * 60 * 60,         // one hour in milliseconds
         zoomMax: 1000 * 60 * 60 * 12     // 12h in milliseconds
     };
-
 
     if (timeline) {
         timeline.setGroups(groups);
@@ -180,13 +272,38 @@ function updateTimeline() {
         const container = document.getElementById('visualization');
         timeline = new vis.Timeline(container, items, groups, options);
     }
+
+    // Highlight selected tasks
+    timeline.on('select', (properties) => {
+        const selectedId = properties.items[0];
+        const selectedActor = selectedId?.split('-')[0];
+
+        // Reset all classes to their original class
+        items.forEach(item => {
+            const originalClass = item.className.replace(' highlight', '');
+            items.update({ id: item.id, className: originalClass });
+        });
+
+        // Highlight tasks of the selected actor
+        if (selectedActor) {
+            items.forEach(item => {
+                const itemActor = item.content.split(' - ')[0];
+                if (itemActor === selectedActor) {
+                    items.update({
+                        id: item.id,
+                        className: `${item.className} highlight`
+                    });
+                }
+            });
+        }
+    });
 }
 
 function calculateNewArrivalTime(actor) {
-    // Trova il task con l'orario di inizio più anticipato tra tutti i task dell'attore
+    // Find the task with the earliest start time among all the actor's tasks
     const earliestTaskStartTime = actor.schedule.reduce((earliest, task) => {
         return isTimeBefore(task.startTime, earliest) ? task.startTime : earliest;
-    }, actor.readyTime); // Usa `readyTime` come valore iniziale di confronto
+    }, actor.readyTime); // Use `readyTime` as the initial comparison value
 
     console.log(actor.schedule);
     const roundedArrivalTime = roundTimeToNearest5(earliestTaskStartTime);
@@ -195,25 +312,22 @@ function calculateNewArrivalTime(actor) {
     return roundedArrivalTime;
 }
 
-
-
-
-// Funzione per aggiornare l'intera tabella di programmazione
+// Function to update the entire schedule table
 function updateScheduleTable() {
     const scheduleTableBody = document.getElementById("scheduleTableBody");
 
     if (!scheduleTableBody) {
-        console.error("Elemento scheduleTableBody non trovato nel DOM.");
+        console.error("Element scheduleTableBody not found in the DOM.");
         return;
     }
 
-    scheduleTableBody.innerHTML = ""; // Svuota la tabella
+    scheduleTableBody.innerHTML = ""; // Clear the table
 
-    // Rigenera la tabella usando i dati aggiornati
+    // Regenerate the table using updated data
     actors.forEach(actor => {
         const row = document.createElement("tr");
 
-        // Crea le celle per ciascuna informazione dell'attore
+        // Create cells for each actor's information
         const nameCell = document.createElement("td");
         nameCell.textContent = actor.name;
         row.appendChild(nameCell);
@@ -238,14 +352,13 @@ function updateScheduleTable() {
         readyTimeCell.textContent = actor.readyTime;
         row.appendChild(readyTimeCell);
 
-        // Aggiungi la riga alla tabella
+        // Add the row to the table
         scheduleTableBody.appendChild(row);
     });
-    console.log("Tabella aggiornata con i nuovi dati degli attori.");
+    console.log("Table updated with new actor data.");
 }
 
-
-// Funzione per calcolare l'intervallo di visualizzazione della timeline con margine
+// Function to calculate the timeline's display range with margin
 function calculateTimelineRange() {
     let minTime = "23:59";
     let maxTime = "00:00";
@@ -264,23 +377,23 @@ function calculateTimelineRange() {
         }
     });
 
-    // Aggiungi un margine di 15 minuti a minTime e maxTime
+    // Add a margin of 15 minutes to minTime and maxTime
     const startTime = subtractMinutes(minTime, 15);
     const endTime = addMinutes(maxTime, 15);
 
-    console.log("Intervallo di tempo calcolato:", { startTime, endTime }); // Log per l'intervallo di tempo
+    console.log("Calculated time range:", { startTime, endTime }); // Log for time range
 
-    // Converte gli orari in oggetti Date
+    // Convert times to Date objects
     const startDate = new Date(`2023-01-01T${startTime}:00`);
     const endDate = new Date(`2023-01-01T${endTime}:00`);
 
     return { startDate, endDate };
 }
 
-// Chiamata alla funzione di aggiornamento quando viene generata la programmazione
+// Call the update function when the schedule is generated
 updateTimeline();
 
-// Aggiunge minuti a un orario e arrotonda ai 5 minuti più vicini
+// Adds minutes to a time and rounds to the nearest 5 minutes
 function addMinutes(time, minutes) {
     const [hours, mins] = time.split(':').map(Number);
     const totalMinutes = hours * 60 + mins + minutes;
@@ -289,18 +402,18 @@ function addMinutes(time, minutes) {
     return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
 }
 
-// Sottrae minuti da un orario e arrotonda ai 5 minuti più vicini
+// Subtracts minutes from a time and rounds to the nearest 5 minutes
 function subtractMinutes(time, minutes) {
     const [hours, mins] = time.split(':').map(Number);
     let totalMins = hours * 60 + mins - minutes;
-    totalMins = Math.round(totalMins / 5) * 5; // Arrotonda ai 5 minuti più vicini
-    if (totalMins < 0) totalMins += 24 * 60;  // Gestisce tempi negativi
+    totalMins = Math.round(totalMins / 5) * 5; // Round to the nearest 5 minutes
+    if (totalMins < 0) totalMins += 24 * 60;  // Handle negative times
     const newHours = Math.floor(totalMins / 60) % 24;
     const newMins = totalMins % 60;
     return `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}`;
 }
 
-// Arrotonda un orario ai 5 minuti più vicini
+// Rounds a time to the nearest 5 minutes
 function roundTimeToNearest5(time) {
     const [hours, mins] = time.split(':').map(Number);
     let totalMins = hours * 60 + mins;
@@ -311,13 +424,13 @@ function roundTimeToNearest5(time) {
     return `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}`;
 }
 
-// Converte un orario in minuti (per la grafica)
+// Converts a time to minutes (for graphics)
 function timeToMinutes(time) {
     const [hours, mins] = time.split(':').map(Number);
     return (hours * 60 + mins);
 }
 
-// Confronta se time1 è prima di time2
+// Compares if time1 is before time2
 function isTimeBefore(time1, time2) {
     return timeToMinutes(time1) < timeToMinutes(time2);
 }
@@ -328,8 +441,7 @@ function isTimeBeforeOrEqual(time1, time2) {
     return hours1 < hours2 || (hours1 === hours2 && mins1 <= mins2);
 }
 
-
-// Calcola la differenza in minuti tra due orari
+// Calculates the difference in minutes between two times
 function timeDifferenceInMinutes(time1, time2) {
     return timeToMinutes(time1) - timeToMinutes(time2);
 }
